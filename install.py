@@ -22,17 +22,20 @@ def main():
     else:
         for n in xrange(0, len(sys.argv)):
             arg = str(sys.argv[n])
+            if n == 0:
+                continue
             if n == 1 and arg.find("=") < 0:
                 if arg.startswith("argeweb/plugin-") is True:
                     arg = "_".join(arg.split("-")[1:]) + "=" + arg
-                    argv.append(arg)
-                else:
-                    argv.append(arg)
+            if (n == 1 and len(sys.argv) == 2) or (n == 1 and len(sys.argv) == 3 and str(sys.argv[2]) == "-S"):
+                print n, len(sys.argv)
+                if arg.find("/") < 0 and arg.find("=") < 0 and arg.find("argeweb") < 0:
+                    arg = arg + "=argeweb/plugin-" + arg
+            argv.append(arg)
 
-    dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",  'plugins')
-    os.chdir(dir)
-    print argv
-    run("bower install " + " ".join(argv) + " -save")
+    plugins_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",  'plugins')
+    os.chdir(plugins_dir)
+    run("bower install " + " ".join(argv))
 
 
 if __name__ == "__main__":
