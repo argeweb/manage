@@ -39,32 +39,20 @@ except IOError:
 
 def deploy(project_id="argeweb-framework", project_version= "2016"):
     dir_web = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",  "..")
-    file_app_yaml = os.path.join(dir_web, "app.yaml")
     os.chdir(dir_web)
-    line_list = []
-    with open(file_app_yaml) as f:
-        for line in f:
-            if line.find("ssl") > 0:
-                line_list.append("- name: ssl\n")
-                line = "  version: latest\n"
-            line_list.append(line)
-    with open(file_app_yaml, 'w+') as f:
-        for line in line_list:
-            f.write(line)
-    print file_app_yaml
-
+    temp_file = open(os.path.join(dir_web, "temp_deploy.yaml"), 'w+')
+    app_file = open(os.path.join(dir_web, "app.yaml"))
+    # temp_file.write("version: %s\n" % project_version)
+    for line in app_file:
+        if line.find("ssl") > 0:
+            temp_file.write("- name: ssl\n  version: latest\n")
+        else:
+            temp_file.write(line)
+    app_file.close()
+    temp_file.close()
     # run ("gcloud app deploy app.yaml --project argeweb-framework")
-    run("appcfg.py update . -A %s -V %s" %(project_id, project_version))
+    run("appcfg.py update temp_deploy.yaml -A %s -V %s" %(project_id, project_version))
+    os.remove(os.path.join(dir_web, "temp_deploy.yaml"))
 
-    is_ssl = False
-    with open(file_app_yaml, 'w+') as f:
-        for line in line_list:
-            if is_ssl:
-                is_ssl = False
-                line = "#ssl\n"
-            if line.find("name: ssl") > 0:
-                is_ssl = True
-                continue
-            f.write(line)
 os.chdir(dir_web)
 deploy(project_config["id"], project_config["version"])
