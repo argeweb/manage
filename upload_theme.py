@@ -4,6 +4,7 @@ import os
 import sys
 import requests
 import json
+import getpass
 
 
 def run(str_command):
@@ -30,15 +31,15 @@ def main():
         theme_config = {
             "host": raw_input("server host: "),
             "account": raw_input("account: "),
-            "password": raw_input("password: ")
         }
         j = json.dumps(theme_config, indent=4)
         with open(file_theme_config, "w") as f:
             f.write(j)
+    password = getpass.getpass("password: ")
     try:
         r = s.post("http://%s/admin/login.json" % (theme_config["host"]), params={
             "account": theme_config["account"],
-            "password": theme_config["password"]
+            "password": password
         })
         print r.text
         pass
