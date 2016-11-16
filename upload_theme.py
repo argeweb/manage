@@ -37,7 +37,7 @@ def main():
             f.write(j)
     password = getpass.getpass("password: ")
     try:
-        r = s.post("http://%s/admin/login.json" % (theme_config["host"]), params={
+        r = s.post("%s/admin/login.json" % (theme_config["host"]), params={
             "account": theme_config["account"],
             "password": password
         })
@@ -57,7 +57,7 @@ def main():
                 print "upload:  " + path
                 with open(os.path.join(root_path, file_name), 'r') as content_file:
                     content = content_file.read()
-                    r = s.post("http://%s/admin/code/upload" % (theme_config["host"]), params={
+                    r = s.post("%s/admin/code/upload" % (theme_config["host"]), data={
                         "code": content,
                         "path": path
                     })
