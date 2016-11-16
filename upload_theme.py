@@ -37,18 +37,37 @@ def main():
             f.write(j)
     password = getpass.getpass("password: ")
     try:
-        r = s.post("%s/admin/login.json" % (theme_config["host"]), params={
+        r = s.post("%s/admin/login.json" % (theme_config["host"]), data={
             "account": theme_config["account"],
             "password": password
         })
-        print r.text
+        rn = json.loads(r.text)
+        if rn["is_login"] == "false":
+            print "account error"
+            return
         pass
     except:
         print "server error"
         return
+    theme_information = {
+        "theme_title": "",
+        "theme_name": theme_name,
+        "exclusive": "all",
+        "author": "",
+        "using": ""
+    }
 
     themes_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", 'themes', theme_name)
     os.chdir(themes_dir)
+    file_theme_information = os.path.join(themes_dir, "theme.json")
+    try:
+        with open(file_theme_information, "r+") as f:
+            theme_information.update(json.load(fp=f))
+            theme_information["theme_title"] = theme_information["name"]
+    except IOError:
+        pass
+    print theme_information
+    r = s.post("%s/admin/themes/upload" % (theme_config["host"]), data=theme_information)
     theme_path = "\\themes\\" + theme_name
     for root_path, _, files in os.walk(themes_dir):
         for file_name in files:

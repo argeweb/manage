@@ -54,6 +54,8 @@ def deploy(project_id="argeweb-framework", project_version= "2016"):
     temp_file.close()
     # run ("gcloud app deploy app.yaml --project argeweb-framework")
     run("appcfg.py update temp_deploy.yaml -A %s -V %s" %(project_id, project_version))
+    run("appcfg.py update_indexes . -A %s -V %s" %(project_id, project_version))
+
     os.remove(os.path.join(dir_web, "temp_deploy.yaml"))
 
 os.chdir(dir_web)
