@@ -48,6 +48,8 @@ def deploy(project_id="argeweb-framework", project_version= "2016"):
             temp_file.write("- name: ssl\n  version: latest\n")
         else:
             temp_file.write(line)
+    if "ignore" in project_config and project_config["ignore"].find("themes") >= 0:
+        temp_file.write("\n- ^themes/.*$")
     app_file.close()
     temp_file.close()
     # run ("gcloud app deploy app.yaml --project argeweb-framework")
