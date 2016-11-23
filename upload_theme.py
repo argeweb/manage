@@ -11,29 +11,29 @@ from time import time
 
 
 class Uploader:
-    def check_file(self, content, path, path_prue):
+    def get_md5(self, content):
         try:
             m2 = hashlib.md5()
             m2.update(content)
-            check_md5 = m2.hexdigest()
+            return m2.hexdigest()
         except:
-            check_md5 = str(time())
+            return str(time())
 
-        print "check :  " + check_md5 + "  " + path_prue
-        r = self.requests_session.post("%s/admin/file/check" % (self.theme_config["host"]), data={
-            "check_md5": check_md5,
-            "path": path
-        })
-        rn = json.loads(r.text)
-        return rn["send"] == "true", check_md5, rn
+    def check_file_with_server_files(self, path, path_prue, files_on_server, check_md5):
+        for item in files_on_server:
+            if u"/" + item["path"] == u"%s" % path and item["md5"] == u"%s" % check_md5:
+                return False
+        print "upload:  " + check_md5 + "  " + path_prue
+        return True
 
-    def upload_code_file(self, root_path, file_name):
+    def upload_code_file(self, root_path, file_name, files_on_server):
         path_without_theme_dir = "/".join((root_path.replace(self.themes_dir, "") + "\\" + file_name).split("\\"))
         path = "/".join((self.theme_path + root_path.replace(self.themes_dir, "") + "\\" + file_name).split("\\"))
         with open(os.path.join(root_path, file_name), 'r') as content_file:
             content = content_file.read()
-            need_send, check_md5, check_result = self.check_file(content, path, path_without_theme_dir)
-            if not need_send:
+            check_md5 = self.get_md5(content)
+            need_send = self.check_file_with_server_files(path, path_without_theme_dir, files_on_server, check_md5)
+            if need_send is False:
                 return
             r = self.requests_session.post("%s/admin/code/upload" % (self.theme_config["host"]), data={
                 "code": content,
@@ -42,17 +42,18 @@ class Uploader:
             })
             rn = json.loads(r.text)
             if "info" in rn:
-                print "upload:  " + rn["info"]
+                print "result:  " + rn["info"]
             else:
-                print "upload:  " + rn["error"]
+                print "result:  " + rn["error"]
 
-    def upload_file(self, root_path, file_name):
+    def upload_file(self, root_path, file_name, files_on_server):
         path_without_theme_dir = "/".join((root_path.replace(self.themes_dir, "") + "\\" + file_name).split("\\"))
         path = "/".join((self.theme_path + root_path.replace(self.themes_dir, "") + "\\" + file_name).split("\\"))
         with open(os.path.join(root_path, file_name), 'r+b') as content_file:
             content = content_file.read()
-            need_send, check_md5, check_result = self.check_file(content, path, path_without_theme_dir)
-            if not need_send:
+            check_md5 = self.get_md5(content)
+            need_send = self.check_file_with_server_files(path, path_without_theme_dir, files_on_server, check_md5)
+            if need_send is False:
                 return
             files = {'file': (file_name, content)}
             r = self.requests_session.post("%s/admin/file/upload" % (self.theme_config["host"]), data={
@@ -96,7 +97,6 @@ class Uploader:
                           help="using http://127.0.0.1:8080")
 
         (options, args) = parser.parse_args()
-
         requests_session = requests.Session()
         paths = __file__.split(os.path.sep)
         if len(paths) == 1:
@@ -155,16 +155,17 @@ class Uploader:
         password = ("password" in theme_config) and theme_config["password"] or options.password
         password = (password is not None) and password or getpass.getpass("password: ")
         try:
-            print "target:  " + theme_config["host"]
-            print "check :  account"
+            print "server:  " + theme_config["host"]
             r = requests_session.post("%s/admin/login.json" % (theme_config["host"]), data={
                 "account": theme_config["account"],
                 "password": password
             })
             rn = json.loads(r.text)
             if rn["is_login"] == "false":
-                print "return:  account error"
+                print "login :  account error"
                 return
+            else:
+                print "login :  success"
         except:
             print "return:  server error"
             return
@@ -182,7 +183,10 @@ class Uploader:
         if options.update:
             r = requests_session.post("%s/admin/themes/upload" % (theme_config["host"]), data=theme_information)
             print "update:  theme information is update"
-        theme_path = "\\themes\\" + options.theme_name
+        r = requests_session.post("%s/admin/themes/get_files_md5" % (theme_config["host"]), data={"theme": theme_information["theme_name"]})
+        rn = json.loads(r.text)
+        files_on_server = rn["files"]
+        theme_path = "\\themes\\" + theme_information["theme_name"]
 
         self.theme_config = theme_config
         self.themes_dir = themes_dir
@@ -196,9 +200,10 @@ class Uploader:
                 if len(file_and_ext) < 2:
                     continue
                 if file_and_ext[-1] in ext_list_code_file:
-                    self.upload_code_file(root_path, file_name)
+                    self.upload_code_file(root_path, file_name, files_on_server)
                 if file_and_ext[-1] in ext_list_other:
-                    self.upload_file(root_path, file_name)
+                    self.upload_file(root_path, file_name, files_on_server)
+        print "done"
 
 
 if __name__ == "__main__":
