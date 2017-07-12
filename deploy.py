@@ -157,7 +157,7 @@ class Deploy:
         if project_config['version'] == 'auto_today':
             import datetime
             project_config['version'] = datetime.datetime.today().strftime('%Y%m%d')
-        self.base_dir = os.path.join(dir_web, '..', '..')
+        self.base_dir = os.path.join(dir_web, '..')
         self.application_dir = os.path.join(self.base_dir, 'application')
         self.plugins_dir = os.path.join(self.base_dir, 'plugins')
         self.target_applications = self.get_target_applications(project_config, project_config_file)
